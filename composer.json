@@ -1,0 +1,24 @@
+{
+    "name": "osynapsy.net/osynapsy-database",
+    "version": "0.9",
+    "homepage": "http://www.osynapsy.net/database",
+    "type": "library",
+    "description": "Osynapsy database",
+    "keywords": ["Osynapsy", "Database", "Pdo", "MySQL", "Oci"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Pietro Celeste",
+            "email": "p.celeste@osynapsy.net",
+            "homepage": "https://github.com/osynapsy/osynapsy-database/wiki"
+        }
+    ],
+    "require": {
+        "php" : ">=7.2.0"
+    },
+    "autoload" : {
+        "psr-4": {
+            "Osynapsy\\Database\\": "src/Osynapsy/DataBase/"
+        }
+    }
+}
