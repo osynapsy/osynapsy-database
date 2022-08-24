@@ -9,9 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace Osynapsy\Db\Sql;
+namespace Osynapsy\Database\Sql;
 
-use Osynapsy\Db\Driver\InterfaceDbo;
+use Osynapsy\Database\Driver\InterfaceDbo;
 
 /**
  * Description of SqlQuery

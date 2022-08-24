@@ -9,9 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace Osynapsy\Db\Record;
+namespace Osynapsy\Database\Record;
 
-use Osynapsy\Db\Driver\InterfaceDbo;
+use Osynapsy\Database\Driver\InterfaceDbo;
 
 /**
  * Active record pattern implementation

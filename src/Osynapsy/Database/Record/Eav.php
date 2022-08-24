@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Osynapsy\Db\Record;
+namespace Osynapsy\Database\Record;
 
 /**
  * Active record pattern implementation
