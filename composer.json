@@ -1,6 +1,6 @@
 {
     "name": "osynapsy.net/osynapsy-database",
-    "version": "0.9",
+    "version": "0.5",
     "homepage": "http://www.osynapsy.net/database",
     "type": "library",
     "description": "Osynapsy database",
