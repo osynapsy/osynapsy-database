@@ -19,7 +19,7 @@
     },
     "autoload" : {
         "psr-4": {
-            "Osynapsy\\Database\\": "src/Osynapsy/DataBase/"
+            "Osynapsy\\Database\\": "src/Osynapsy/Database/"
         }
     }
 }
