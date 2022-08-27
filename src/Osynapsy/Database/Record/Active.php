@@ -3,7 +3,7 @@
 /*
  * This file is part of the Osynapsy package.
  *
- * (c) Pietro Celeste <p.celeste@osynapsy.org>
+ * (c) Pietro Celeste <p.celeste@osynapsy.net>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -16,13 +16,7 @@ use Osynapsy\Database\Driver\InterfaceDbo;
 /**
  * Active record pattern implementation
  *
- * PHP Version 5
- *
- * @category Pattern
- * @package  Osynapsy
- * @author   Pietro Celeste <p.celeste@osynapsy.org>
- * @license  GPL http://www.gnu.org/licenses/gpl-3.0.en.html
- * @link     http://docs.osynapsy.org/ref/ActiveRecord
+ * @author   Pietro Celeste <p.celeste@osynapsy.net>
  */
 
 abstract class Active implements InterfaceRecord
