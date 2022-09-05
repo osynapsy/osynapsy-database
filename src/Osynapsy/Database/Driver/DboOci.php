@@ -163,56 +163,8 @@ class DboOci implements InterfaceDbo
         return $result;
     }
 
-    public function getIterator($rs, $par = null, $method = null)
-    {
-	    if (is_string($rs)) {
-	        $rs = $this->execCommand($rs, $par);
-	    } else {
-	        $method = $par;
-	    }
-	    switch($method) {
-	        case 'BOTH':
-	            $method = OCI_BOTH;
-	            break;
-	        case 'NUM':
-	            $method = OCI_NUM;
-	            break;
-	        default:
-	            $method = OCI_ASSOC;
-	            break;
-	    }
-	    while ($record = oci_fetch_array($rs, $method | OCI_RETURN_NULLS)) {
-	        yield $record;
-	    }
-	    $this->freeRs($rs);
-    }
-    public function query($sql)
-    {
-        return $this->execCommand($sql);
-    }
 
-    public function fetchAll2($rs)
-    {
-        oci_fetch_all(
-            $rs,
-            $res,
-            null,
-            null,
-            OCI_FETCHSTATEMENT_BY_ROW | OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS
-        );
-        return $res;
-    }
-
-    public function fetchAll($rs)
-    {
-        $result = array();
-        while ($record = oci_fetch_array($rs, OCI_ASSOC|OCI_RETURN_NULLS)) {
-            $result[] = $record;
-        }
-        return $result;
-    }
-
-    protected function execUnique($sql, $parameters = null, int $fetchMethod = OCI_NUM)
+    protected function execUniqueQuery($sql, $parameters = null, int $fetchMethod = OCI_NUM)
     {
        $res = $this->execQuery($sql, $parameters, $fetchMethod);
        if (empty($res)) {
@@ -241,6 +193,11 @@ class DboOci implements InterfaceDbo
     }
 
     public function exec($sql, array $parameters = [])
+    {
+        return $this->execQuery($sql, $parameters, OCI_NUM);
+    }
+
+    public function find($sql, $parameters = [])
     {
         return $this->execQuery($sql, $parameters, OCI_NUM);
     }
@@ -353,7 +310,7 @@ class DboOci implements InterfaceDbo
         return $this->execQuery($cmd, $values, 'ASSOC');
     }
 
-    public function selectFactory(array $fields = [])
+    public function selectFactory(array $fields) : Select
     {
         $Select = new Select($fields);
         $Select->setDb($this);
