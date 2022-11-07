@@ -29,12 +29,12 @@ abstract class Active implements InterfaceRecord
     private $extendRecord = [];
     private $originalRecord = [];
     private $behavior;
-    private $sequence;
-    private $table;
     private $searchCondition = [];
     private $softDelete = [];
-    private $keys = [];
-    private $fields = [];
+    protected $sequence;
+    protected $table;
+    protected $keys = [];
+    protected $fields = [];
     private $extensions = [];
     private $debug = false;
     public $lastAutoincrementId;
