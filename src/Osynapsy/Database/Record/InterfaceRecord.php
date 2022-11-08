@@ -18,6 +18,9 @@ namespace Osynapsy\Database\Record;
  */
 interface InterfaceRecord
 {
+    const BEHAVIOR_INSERT = 'insert';
+    const BEHAVIOR_UPDATE = 'update';
+
     public function fieldExists($field);
 
     public function findByKey($key);
@@ -26,5 +29,13 @@ interface InterfaceRecord
 
     public function get($key = null);
 
+    public function getBehavior();
+
+    public function reset();
+
+    public function save(array $values = []);
+
     public function setValue($field, $value = null, $defaultValue = null);
+
+    public function setValues(array $values);
 }

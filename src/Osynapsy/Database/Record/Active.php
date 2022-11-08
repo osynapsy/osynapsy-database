@@ -21,9 +21,6 @@ use Osynapsy\Database\Driver\InterfaceDbo;
 
 abstract class Active implements InterfaceRecord
 {
-    const BEHAVIOR_INSERT = 'insert';
-    const BEHAVIOR_UPDATE = 'update';
-
     protected $dbConnection;
     private $activeRecord = [];
     private $extendRecord = [];
