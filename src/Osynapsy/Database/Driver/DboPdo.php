@@ -22,7 +22,7 @@ class DboPdo extends \PDO implements InterfaceDbo
 {
     private $cursor = null;
     private $connectionStringDecoder = [
-        'sqlite' => ['type','db'],
+        'sqlite' => ['type','dbname'],
         '*' => ['type','host','dbname','username','password','port']
     ];
     private $param = [
