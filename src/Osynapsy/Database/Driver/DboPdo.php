@@ -21,10 +21,12 @@ use Osynapsy\Database\Sql\Select;
 class DboPdo extends \PDO implements InterfaceDbo
 {
     private $cursor = null;
+
     private $connectionStringDecoder = [
         'sqlite' => ['type','dbname'],
         '*' => ['type','host','dbname','username','password','port']
     ];
+
     private $param = [
         'queryParameterDummy' => '?',
         'backticks' => '"'
