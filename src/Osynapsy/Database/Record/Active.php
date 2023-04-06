@@ -11,7 +11,7 @@
 
 namespace Osynapsy\Database\Record;
 
-use Osynapsy\Database\Driver\InterfaceDbo;
+use Osynapsy\Database\Driver\DboInterface;
 
 /**
  * Active record pattern implementation
@@ -42,7 +42,7 @@ abstract class Active implements RecordInterface
      * @param PDO $dbCn A valid dbPdo wrapper
      * @return void
      */
-    public function __construct(InterfaceDbo $dbCn, array $keyValues = [], $debug = false)
+    public function __construct(DboInterface $dbCn, array $keyValues = [], $debug = false)
     {
         $this->setDebug($debug);
         $this->dbConnection = $dbCn;

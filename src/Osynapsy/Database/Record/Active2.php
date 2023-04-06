@@ -45,7 +45,7 @@ abstract class Active2 implements RecordInterface
      * @param PDO $dbCn A valid dbPdo wrapper
      * @return void
      */
-    public function __construct(DboIterface $dbCn, array $keyValues = [], $debug = false)
+    public function __construct(DboInterface $dbCn, array $keyValues = [], $debug = false)
     {
         $this->setDebug($debug);
         $this->dbConnection = $dbCn;

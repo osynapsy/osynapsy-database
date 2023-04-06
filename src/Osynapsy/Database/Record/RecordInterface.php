@@ -16,7 +16,7 @@ namespace Osynapsy\Database\Record;
  *
  * @author Pietro Celeste <p.celeste@osynapsy.net>
  */
-interface InterfaceRecord
+interface RecordInterface
 {
     const BEHAVIOR_INSERT = 'insert';
     const BEHAVIOR_UPDATE = 'update';
