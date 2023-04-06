@@ -13,7 +13,7 @@ namespace Osynapsy\Database;
 
 use Osynapsy\Database\Driver\DboOci;
 use Osynapsy\Database\Driver\DboPdo;
-use Osynapsy\Database\Driver\InterfaceDbo;
+use Osynapsy\Database\Driver\DboInterface;
 
 /**
  * This class build db connection and store it in connectionPool repo.
@@ -44,7 +44,7 @@ class DboFactory
      * @param mixed $idx
      * @return InterfaceDbo object
      */
-    public function createConnection($connectionString, $idx = null) : InterfaceDbo
+    public function createConnection($connectionString, $idx = null) : DboInterface
     {
         if (array_key_exists($connectionString, $this->connectionIndex)) {
             return $this->connectionPool[$this->connectionIndex[$connectionString]];

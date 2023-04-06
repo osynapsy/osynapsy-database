@@ -18,7 +18,7 @@ use Osynapsy\Database\Sql\Select;
  *
  * @author   Pietro Celeste <p.celeste@osynapsy.net>
  */
-class DboPdo extends \PDO implements InterfaceDbo
+class DboPdo extends \PDO implements DboInterface
 {
     private $cursor = null;
 

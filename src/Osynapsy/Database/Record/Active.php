@@ -19,7 +19,7 @@ use Osynapsy\Database\Driver\InterfaceDbo;
  * @author   Pietro Celeste <p.celeste@osynapsy.net>
  */
 
-abstract class Active implements InterfaceRecord
+abstract class Active implements RecordInterface
 {
     protected $dbConnection;
     private $activeRecord = [];

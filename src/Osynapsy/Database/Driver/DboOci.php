@@ -19,7 +19,7 @@ use Osynapsy\Database\Sql\Select;
  *
  * @author   Pietro Celeste <p.celeste@osynapsy.net>
  */
-class DboOci implements InterfaceDbo
+class DboOci implements DboInterface
 {
     const FETCH_NUM = 'NUM';
     const FETCH_ASSOC = 'ASSOC';
