@@ -32,9 +32,9 @@ class DboFactory
      *
      * @return object
      */
-    public function getConnection($key)
+    public function getConnection($key) : ?DboInterface
     {
-        return array_key_exists($key, $this->connectionPool) ? $this->connectionPool[$key] : false;
+        return array_key_exists($key, $this->connectionPool) ? $this->connectionPool[$key] : null;
     }
 
     /**
