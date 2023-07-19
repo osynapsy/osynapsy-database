@@ -66,7 +66,7 @@ abstract class Active implements RecordInterface
      */
     public function fieldExists($field)
     {
-        return in_array($field, $this->fields);
+        return in_array(trim($field), $this->fields);
     }
 
     /**
@@ -256,7 +256,7 @@ abstract class Active implements RecordInterface
             return $this;
         }
         //If field is not found throw a exception;
-        throw new \Exception("Field {$field} do not exist");
+        throw new \Exception(sprintf("Field %s do not exist (%s)", $field, get_class($this)));
     }
 
     private function setValueInExtension($field, $value = null, $defaultValue = null)
