@@ -25,6 +25,8 @@ abstract class Active implements RecordInterface
     private $activeRecord = [];
     private $extendRecord = [];
     private $originalRecord = [];
+    protected $recordCollection = [];
+    protected $activeRecordIdx;
     private $behavior;
     private $searchCondition = [];
     private $softDelete = [];
@@ -54,7 +56,7 @@ abstract class Active implements RecordInterface
         $this->softDelete = $this->softDelete();
         $this->init();
         if (!empty($keyValues)) {
-            $this->findByKey($keyValues);
+            $this->where($keyValues);
         }
     }
 
@@ -69,57 +71,87 @@ abstract class Active implements RecordInterface
         return in_array(trim($field), $this->fields);
     }
 
+    protected function arrayIsList(array $array)
+    {
+        return empty($array) ? true : array_keys($array) === range(0, count($array) - 1);
+    }
+
+    /**
+     * Find record in table through key value example : 1, [1,2]
+     *
+     * @param int|string|array $keyValues
+     * @return array
+     * @throws \Exception
+     */
+    public function findByKey($keyValues)
+    {
+        return $this->where(is_array($keyValues) ? $keyValues : [$keyValues])->get();
+    }
+
+    /**
+     * Find record in table through array of attributes (example ['type' => 1])
+     *
+     * @param array $reSearchParameters
+     * @return array
+     */
+    public function findByAttributes(array $reSearchParameters)
+    {
+        return $this->where($reSearchParameters)->get();
+    }
+
     /**
      * Load record from database and store in originalRecord + activeRecord
      *
-     * @param $reSearchParameters array of parameter (key = fieldname, value = value) ex.: ['id' => 5]
+     * @param $filterParameters array of parameter (key = fieldname, value = value) ex.: ['id' => 5]
      * @return void
      */
-    protected function find(array $reSearchParameters)
+    public function where(array $filterParameters)
     {
-        if (empty($reSearchParameters)) {
+        if (empty($filterParameters)) {
             throw new \Exception('Parameter required');
         }
-        $this->searchCondition = $reSearchParameters;
-        list($conditions, $parameters) = $this->conditionsFactory($reSearchParameters);
-        $sql = sprintf("SELECT * FROM %s WHERE %s ORDER BY 1", $this->table, implode(' AND ', $conditions));
-        if ($this->debug) {
-            echo $sql;
-        }
-        try {
-            $this->activeRecord = $this->getDb()->findOneAssoc($sql, $parameters);
-        } catch (\Exception $e) {
-            throw new \Exception('Query error : '.$sql."\n".$e->getMessage(), 100);
-        }
-        $extendedValues = $this->findInExtensions();
-        if (!empty($extendedValues)) {
-            $this->activeRecord = array_merge($extendedValues, $this->activeRecord);
+        $this->reset();
+        $this->searchCondition = $this->arrayIsList($filterParameters) ? $this->parameterByKeyFactory($filterParameters) : $filterParameters;
+        $this->recordCollection = $this->getCollectionFromDb($this->searchCondition);
+        $this->activeRecordIdx = 0;
+        $this->activeRecord = $this->recordCollection[$this->activeRecordIdx] ?? [];
+        if (!empty($this->extensions)) {
+            $this->activeRecord = array_merge($this->loadExtensions(), $this->activeRecord);
         }
         $this->originalRecord = $this->activeRecord;
-        if (empty($this->activeRecord)) {
-            return [];
-        }
         $this->behavior = self::BEHAVIOR_UPDATE;
-        return $this->activeRecord;
+        return $this;
     }
 
-    protected function conditionsFactory($reSearchParameters)
+    protected function parameterByKeyFactory($keyValues)
+    {
+        $raw = is_array($keyValues) ? $keyValues : [$keyValues];
+        if (count($this->keys) != count($raw)) {
+            throw new \Exception('Values don\'t match keys '.count($this->keys).' ('.count($raw).')', 202);
+        }
+        $params = [];
+        foreach($this->keys as $idx => $key) {
+            if (!$raw[$idx]) {
+                throw new \Exception('Values key is empty', 10);
+            }
+            $params[$key] = $raw[$idx];
+        }
+        return $params;
+    }
+
+    protected function getCollectionFromDb($filterParameters)
     {
         $conditions = $parameters  = [];
         $i = 0;
-        /*$range = range('a','z');
-        foreach ($reSearchParameters as $field => $value) {
-            $fieldsh1 = $range[$i];
-            $where['conditions'][] = "$field = :{$fieldsh1}";
-            $where['parameters'][$fieldsh1] = $value;
-            $i++;
-        }*/
-        foreach ($reSearchParameters as $field => $value) {
+        foreach ($filterParameters as $field => $value) {
             list($condition, $conditionParameters) = $this->conditionFactory($field, $value, $i);
             $conditions[] = $condition;
             $parameters += $conditionParameters;
         }
-        return [$conditions, $parameters];
+        return $this->getDb()->findAssoc(
+            sprintf("SELECT * FROM %s WHERE %s ORDER BY 1", $this->table, implode(' AND ', $conditions)),
+            $parameters
+        );
     }
 
     /**
@@ -142,11 +174,8 @@ abstract class Active implements RecordInterface
         return ['('.implode(' OR ', $conditions).')', $parameters];
     }
 
-    private function findInExtensions()
+    private function loadExtensions()
     {
-        if (empty($this->extensions)) {
-            return [];
-        }
         $values = [];
         foreach($this->extensions as $extension){
             $searchArray = [];
@@ -157,52 +186,10 @@ abstract class Active implements RecordInterface
                 }
                 $searchArray[$foreignIdx] = $this->fieldExists($field) ? $this->get($field) : $field;
             }
-            try {
-                $extens = $extension[0]->findByAttributes($searchArray);
-                $values = array_merge($values, is_array($extens) ? $extens : []);
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
+            $extens = $extension[0]->findByAttributes($searchArray);
+            $values = array_merge($values, is_array($extens) ? $extens : []);
         }
         return $values;
-    }
-
-    /**
-     * Find record in table through key value example : 1, [1,2]
-     *
-     * @param int|string|array $keyValues
-     * @return array
-     * @throws \Exception
-     */
-    public function findByKey($keyValues)
-    {
-        $this->reset();
-        $raw = is_array($keyValues) ? $keyValues : [$keyValues];
-        if (count($this->keys) != count($raw)) {
-            throw new \Exception('Values don\'t match keys '.count($this->keys).' ('.count($raw).')', 202);
-        }
-        $params = [];
-        foreach($this->keys as $idx => $key) {
-            if (!$raw[$idx]) {
-                throw new \Exception('Values key is empty', 10);
-            }
-            $params[$key] = $raw[$idx];
-        }
-        $this->find($params);
-        $this->afterFindByKey();
-        return $this->activeRecord;
-    }
-
-    /**
-     * Find record in table through array of attributes (example ['type' => 1])
-     *
-     * @param array $reSearchParameters
-     * @return array
-     */
-    public function findByAttributes(array $reSearchParameters)
-    {
-        $this->reset();
-        return $this->find($reSearchParameters);
     }
 
     /**
@@ -220,6 +207,11 @@ abstract class Active implements RecordInterface
             return $this->activeRecord[$key];
         }
         return null;
+    }
+
+    public function getCollection()
+    {
+        return $this->recordCollection;
     }
 
     public function getExtension($idx = 0)
@@ -247,11 +239,11 @@ abstract class Active implements RecordInterface
         }
         //If searched field is in actual record set activeRecord and return;
         if ($this->fieldExists($field)) {
-            $this->activeRecord[$field] = ($value !== '0' && $value !== 0 && empty($value))  ? $defaultValue : $value;
+            $this->activeRecord[$field] = $value ?? $defaultValue;
             return $this;
         }
         //If searched field is in a extension record set extendRecord and return;
-        if ($this->setValueInExtension($field, $value, $defaultValue)) {
+        if (!empty($this->extensions) && $this->setValueInExtension($field, $value, $defaultValue)) {
             $this->extendRecord[$field] = $value;
             return $this;
         }
@@ -261,9 +253,6 @@ abstract class Active implements RecordInterface
 
     private function setValueInExtension($field, $value = null, $defaultValue = null)
     {
-        if (empty($this->extensions)) {
-            return false;
-        }
         foreach($this->extensions as $extension) {
             $record = $extension[0];
             if (!$record->fieldExists($field)) {
@@ -305,7 +294,9 @@ abstract class Active implements RecordInterface
         }
         $this->beforeSave();
         $id = empty($this->originalRecord)? $this->insert() : $this->update();
-        $this->saveRecordExtensions();
+        if (empty($this->extensions) || empty($this->extendRecord)) {
+            $this->saveRecordExtensions();
+        }
         $this->afterSave();
         return $id;
     }
@@ -317,27 +308,16 @@ abstract class Active implements RecordInterface
      */
     private function saveRecordExtensions()
     {
-        if (empty($this->extensions) || empty($this->extendRecord)) {
-            return;
-        }
         $extendedValues = $this->extendRecord;
-        foreach($this->extensions as $extension){
-            /*foreach($this->keys as $idx => $field){
-                $extension[0]->setValue($extension[1][$idx], $this->get($field));
-            }*/
+        foreach ($this->extensions as $extension) {
             $RecordExt   = $extension[0];
             $foreignKeys = $extension[1];
             foreach($foreignKeys as $foreignIdx => $field) {
                 if (is_int($foreignIdx)) {
-                    $RecordExt->setValue($field, $this->get(
-                        $this->keys[$foreignIdx]
-                    ));
+                    $RecordExt->setValue($field, $this->get($this->keys[$foreignIdx]));
                     continue;
                 }
-                $RecordExt->setValue(
-                    $foreignIdx,
-                    $this->fieldExists($field) ? $this->get($field) : $field
-                );
+                $RecordExt->setValue($foreignIdx, $this->fieldExists($field) ? $this->get($field) : $field);
             }
             foreach($extendedValues as $field => $value) {
                 //Intercept exception on setValue extended record;
@@ -381,7 +361,7 @@ abstract class Active implements RecordInterface
     {
         $this->lastAutoincrementId = $id;
         if (!empty($id) && count($this->keys) == 1) {
-            $this->findByKey($id);
+            $this->where([$id]);
             return;
         }
         $attributes = [];
@@ -391,7 +371,7 @@ abstract class Active implements RecordInterface
             }
             $attributes[$key] = $this->activeRecord[$key];
         }
-        $this->findByAttributes($attributes);
+        $this->where($attributes);
     }
 
     /**
@@ -402,13 +382,10 @@ abstract class Active implements RecordInterface
     private function update()
     {
         $this->beforeUpdate();
-        if (empty($this->searchCondition)) {
-            throw new \Exception('Primary key is empty');
-        }
         $this->getDb()->update(
             $this->table,
             array_intersect_key($this->activeRecord, array_flip($this->fields())),
-            $this->searchCondition
+            $this->activeRecordCondition()
         );
         $this->afterUpdate();
     }
@@ -421,15 +398,25 @@ abstract class Active implements RecordInterface
     public function delete()
     {
         $this->beforeDelete();
-        if (empty($this->searchCondition)) {
-            throw new \Exception('Primary key is empty');
-        }
+        $activeRecordCondition = $this->activeRecordCondition();
         if (!empty($this->softDelete) && is_array($this->softDelete)) {
-            $this->getDb()->update($this->table, $this->softDelete, $this->searchCondition);
+            $this->getDb()->update($this->table, $this->softDelete, $activeRecordCondition);
         } else {
-            $this->getDb()->delete($this->table, $this->searchCondition);
+            $this->getDb()->delete($this->table, $activeRecordCondition);
         }
         $this->afterDelete();
+    }
+
+    protected function activeRecordCondition()
+    {
+        if (empty($this->activeRecord)) {
+            throw new \Exception('Active record not found', 404);
+        }
+        $conditions = [];
+        foreach($this->keys as $key) {
+            $conditions[$key] = $this->activeRecord[$key];
+        }
+        return $conditions;
     }
 
     /**
