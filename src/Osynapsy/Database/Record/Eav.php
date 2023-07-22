@@ -83,7 +83,7 @@ abstract class Eav
             return $this->originalRecord;
         }
         $this->state = 'update';
-        return $this->activeRecord;
+        return $this;
     }
 
 
