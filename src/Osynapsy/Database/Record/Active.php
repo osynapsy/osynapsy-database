@@ -209,9 +209,23 @@ abstract class Active implements RecordInterface
         return null;
     }
 
-    public function getCollection()
+    public function getCollection(array $fields = [])
     {
-        return $this->recordCollection;
+        if (empty($fields)) {
+            return $this->recordCollection ?? [];
+        }
+        return $this->filterColumnCollection($fields);
+    }
+    
+    protected function filterColumnCollection(array $fields)
+    {
+        $result = [];
+        $column_keys = array_flip($fields); // getting keys as values
+        foreach ($this->recordCollection as $key => $values) {
+            // getting only those key value pairs, which matches $column_keys
+            $result[$key] = array_intersect_key($values, $column_keys);
+        }
+        return $result;
     }
 
     public function getExtension($idx = 0)
