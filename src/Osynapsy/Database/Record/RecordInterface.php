@@ -22,10 +22,8 @@ interface RecordInterface
     const BEHAVIOR_UPDATE = 'update';
 
     public function fieldExists($field);
-
-    public function findByKey($key);
-
-    public function findByAttributes(array $searchParameters);
+    
+    public function where(array $searchParameters);
 
     public function get($key = null);
 
