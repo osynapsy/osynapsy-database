@@ -34,29 +34,30 @@ abstract class Active implements RecordInterface
     protected $table;
     protected $keys = [];
     protected $fields = [];
-    private $extensions = [];
-    private $debug = false;
+    protected $orderby;
+    private $extensions = [];    
     public $lastAutoincrementId;
 
     /**
      * Object constructor
-     *
-     * @param PDO $dbCn A valid dbPdo wrapper
+     * @param array $filters array with filters
+     * @param array $orderby array with orderby fields
+     * @param PDO $dbo A valid dbPdo wrapper
      * @return void
      */
-    public function __construct(DboInterface $dbCn, array $keyValues = [], bool $debug = false)
-    {
-        $this->setDebug($debug);
-        $this->dbConnection = $dbCn;
+    public function __construct(array $filters = [], array $orderby = [], ?DboInterface $dbo = null)
+    {        
+        $this->dbConnection = $dbo ?? dbo();
         $this->behavior = self::BEHAVIOR_INSERT;
         $this->keys = $this->primaryKey();
         $this->table = $this->table();
         $this->sequence = $this->sequence();
         $this->fields = $this->fields();
         $this->softDelete = $this->softDelete();
-        $this->init();
-        if (!empty($keyValues)) {
-            $this->where($keyValues);
+        $this->orderby = $orderby ?: $this->orderby();
+        $this->extensionFactory();
+        if (!empty($filters)) {
+            $this->where($filters);
         }
     }
 
@@ -77,29 +78,6 @@ abstract class Active implements RecordInterface
     }
 
     /**
-     * Find record in table through key value example : 1, [1,2]
-     *
-     * @param int|string|array $keyValues
-     * @return array
-     * @throws \Exception
-     */
-    public function findByKey($keyValues)
-    {
-        return $this->where(is_array($keyValues) ? $keyValues : [$keyValues])->get();
-    }
-
-    /**
-     * Find record in table through array of attributes (example ['type' => 1])
-     *
-     * @param array $reSearchParameters
-     * @return array
-     */
-    public function findByAttributes(array $reSearchParameters)
-    {
-        return $this->where($reSearchParameters)->get();
-    }
-
-    /**
      * Load record from database and store in originalRecord + activeRecord
      *
      * @param $filterParameters array of parameter (key = fieldname, value = value) ex.: ['id' => 5]
@@ -113,8 +91,11 @@ abstract class Active implements RecordInterface
         $this->reset();
         $this->searchCondition = $this->arrayIsList($filterParameters) ? $this->parameterByKeyFactory($filterParameters) : $filterParameters;
         $this->recordCollection = $this->getCollectionFromDb($this->searchCondition);
+        if (empty($this->recordCollection)) {
+            return;
+        }
         $this->activeRecordIdx = 0;
-        $this->activeRecord = $this->recordCollection[$this->activeRecordIdx] ?? [];
+        $this->activeRecord = $this->recordCollection[$this->activeRecordIdx];
         if (!empty($this->extensions)) {
             $this->activeRecord = array_merge($this->loadExtensions(), $this->activeRecord);
         }
@@ -149,7 +130,12 @@ abstract class Active implements RecordInterface
             $parameters += $conditionParameters;
         }
         return $this->getDb()->findAssoc(
-            sprintf("SELECT * FROM %s WHERE %s ORDER BY 1", $this->table, implode(' AND ', $conditions)),
+            sprintf(
+                "SELECT * FROM %s WHERE %s ORDER BY %s", 
+                $this->table, 
+                implode(' AND ', $conditions),
+                implode(', ', $this->orderby ?: $this->keys ?: ['1'])
+            ),
             $parameters
         );
     }
@@ -177,16 +163,16 @@ abstract class Active implements RecordInterface
     private function loadExtensions()
     {
         $values = [];
-        foreach($this->extensions as $extension){
+        foreach ($this->extensions as $extension) {
             $searchArray = [];
-            foreach($extension[1] as $foreignIdx => $field) {
+            foreach ($extension[1] as $foreignIdx => $field) {
                 if (is_int($foreignIdx)) {
                     $searchArray[$field] = $this->get($this->keys[$foreignIdx]);
                     continue;
                 }
                 $searchArray[$foreignIdx] = $this->fieldExists($field) ? $this->get($field) : $field;
             }
-            $extens = $extension[0]->findByAttributes($searchArray);
+            $extens = $extension[0]->where($searchArray);
             $values = array_merge($values, is_array($extens) ? $extens : []);
         }
         return $values;
@@ -195,26 +181,23 @@ abstract class Active implements RecordInterface
     /**
      * Get single value from active record or get all active record
      *
-     * @param string $key
+     * @param string $field name to return
      * @return mixed
      */
-    public function get($key = null)
+    public function get($field = null)
     {
-        if (is_null($key)) {
+        if (is_null($field)) {
             return $this->activeRecord;
         }
-        if (is_array($this->activeRecord) && array_key_exists($key, $this->activeRecord)) {
-            return $this->activeRecord[$key];
+        if (is_array($this->activeRecord) && array_key_exists($field, $this->activeRecord)) {
+            return $this->activeRecord[$field];
         }
         return null;
     }
 
-    public function getCollection(array $fields = [])
-    {
-        if (empty($fields)) {
-            return $this->recordCollection ?? [];
-        }
-        return $this->filterColumnCollection($fields);
+    public function getCollection(?callable $func = null)
+    {        
+        return empty($func) ? $this->recordCollection : array_map($func, $this->recordCollection);
     }
     
     protected function filterColumnCollection(array $fields)
@@ -233,8 +216,9 @@ abstract class Active implements RecordInterface
         return $this->extendRecord[$idx];
     }
 
-    protected function init()
+    protected function orderby() : array
     {
+        return [];
     }
 
     /**
@@ -516,16 +500,6 @@ abstract class Active implements RecordInterface
     }
 
     /**
-     * Set debug property
-     *
-     * @return string
-     */
-    protected function setDebug($debug = true)
-    {
-        $this->debug = $debug;
-    }
-
-    /**
      * Active or disactive softDelete
      *
      * @return boolean
@@ -588,6 +562,8 @@ abstract class Active implements RecordInterface
     protected function beforeSave(){}
 
     protected function beforeUpdate(){}
+    
+    protected function extensionFactory(){}
 
     abstract public function fields();
 
