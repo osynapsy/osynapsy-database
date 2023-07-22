@@ -11,6 +11,8 @@
 
 namespace Osynapsy\Database\Record;
 
+use Osynapsy\Database\Driver\DboInterface;
+
 /**
  * Active record pattern implementation
  *
@@ -36,9 +38,9 @@ abstract class Eav
      * @param PDO $dbCn A valid dbPdo wrapper
      * @return void
      */
-    public function __construct($dbCn)
+    public function __construct(?DboInterface $dbCn = null)
     {
-        $this->dbConnection = $dbCn;
+        $this->dbConnection = $dbCn ?? dbo();
         $this->keys = $this->primaryKey();
         $this->table = $this->table();
         $this->sequence = $this->sequence();
@@ -52,16 +54,14 @@ abstract class Eav
      * @param $reSearchParameters array of parameter (key = fieldname, value = value) ex.: ['id' => 5]
      * @return void
      */
-    protected function find(array $reSearchParameters)
+    public function where(array $reSearchParameters)
     {
         if (empty($reSearchParameters)) {
             throw new \Exception('Parameter required');
         }
+        $this->reset();
         $this->searchCondition = $reSearchParameters;
-        $where = [
-            'conditions' => [],
-            'parameters' => []
-        ];
+        $where = ['conditions' => [], 'parameters' => []];
         $range = range('a','z');
         $i = 0;
         foreach ($reSearchParameters as $field => $value) {
@@ -129,19 +129,7 @@ abstract class Eav
             }
             $params[$key] = $raw[$idx];
         }
-        return $this->find($params);
-    }
-
-    /**
-     * Find record in table through array of attributes (example ['type' => 1])
-     *
-     * @param array $reSearchParameters
-     * @return array
-     */
-    public function findByAttributes(array $reSearchParameters)
-    {
-        $this->reset();
-        return $this->find($reSearchParameters);
+        return $this->where($params);
     }
 
     /**
