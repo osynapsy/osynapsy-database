@@ -35,7 +35,7 @@ abstract class Active implements RecordInterface
     protected $keys = [];
     protected $fields = [];
     protected $orderby;
-    private $extensions = [];    
+    private $extensions = [];
     public $lastAutoincrementId;
 
     /**
@@ -46,7 +46,7 @@ abstract class Active implements RecordInterface
      * @return void
      */
     public function __construct(array $filters = [], array $orderby = [], ?DboInterface $dbo = null)
-    {        
+    {
         $this->dbConnection = $dbo ?? dbo();
         $this->behavior = self::BEHAVIOR_INSERT;
         $this->keys = $this->primaryKey();
@@ -131,8 +131,8 @@ abstract class Active implements RecordInterface
         }
         return $this->getDb()->findAssoc(
             sprintf(
-                "SELECT * FROM %s WHERE %s ORDER BY %s", 
-                $this->table, 
+                "SELECT * FROM %s WHERE %s ORDER BY %s",
+                $this->table,
                 implode(' AND ', $conditions),
                 implode(', ', $this->orderby ?: $this->keys ?: ['1'])
             ),
@@ -172,7 +172,7 @@ abstract class Active implements RecordInterface
                 }
                 $searchArray[$foreignIdx] = $this->fieldExists($field) ? $this->get($field) : $field;
             }
-            $extens = $extension[0]->where($searchArray);
+            $extens = $extension[0]->where($searchArray)->get();
             $values = array_merge($values, is_array($extens) ? $extens : []);
         }
         return $values;
@@ -196,10 +196,10 @@ abstract class Active implements RecordInterface
     }
 
     public function getCollection(?callable $func = null)
-    {        
+    {
         return empty($func) ? $this->recordCollection : array_map($func, $this->recordCollection);
     }
-    
+
     protected function filterColumnCollection(array $fields)
     {
         $result = [];
@@ -292,7 +292,7 @@ abstract class Active implements RecordInterface
         }
         $this->beforeSave();
         $id = empty($this->originalRecord)? $this->insert() : $this->update();
-        if (empty($this->extensions) || empty($this->extendRecord)) {
+        if (!empty($this->extensions) && !empty($this->extendRecord)) {
             $this->saveRecordExtensions();
         }
         $this->afterSave();
@@ -562,7 +562,7 @@ abstract class Active implements RecordInterface
     protected function beforeSave(){}
 
     protected function beforeUpdate(){}
-    
+
     protected function extensionFactory(){}
 
     abstract public function fields();
