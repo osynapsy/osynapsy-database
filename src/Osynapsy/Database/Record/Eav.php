@@ -61,6 +61,16 @@ abstract class Eav
         }
         $this->reset();
         $this->searchCondition = $reSearchParameters;
+        $where = $this->buildWhereConditions($reSearchParameters); 
+        $this->loadFieldValues($this->execQuery($where));
+        if (!empty($this->originalRecord)) {
+            $this->state = 'update';
+        }        
+        return $this;
+    }
+
+    protected function buildWhereConditions($reSearchParameters)
+    {
         $where = ['conditions' => [], 'parameters' => []];
         $range = range('a','z');
         $i = 0;
@@ -70,26 +80,18 @@ abstract class Eav
             $where['parameters'][$fieldsh1] = $value;
             $i++;
         }
-        try {
-            $sql = "SELECT * FROM {$this->table} WHERE ".implode(' AND ', $where['conditions'])." ORDER BY 1";
-            $this->loadFieldValues(
-                $this->dbConnection->findAssoc($sql, $where['parameters'])
-            );
-
-        } catch (\Exception $e) {
-            throw new \Exception('Query error : '.$sql."\n".$e->getMessage(), 100);
-        }
-        if (empty($this->originalRecord)) {
-            return $this->originalRecord;
-        }
-        $this->state = 'update';
-        return $this;
+        return $where;
     }
-
-
+    
+    protected function execQuery($where)
+    {        
+        $sql = sprintf("SELECT * FROM %s WHERE %s ORDER BY 1", $this->table, implode(' AND ', $where['conditions']));
+        return $this->dbConnection->findAssoc($sql, $where['parameters']);
+    }
+    
     protected function loadFieldValues($recordSet)
     {
-        foreach($recordSet as $fields){
+        foreach ($recordSet as $fields) {
             $attributeId = $fields[$this->attributeIdField()];
             $attributeValue = $fields[$this->attributeValueField()];
             $this->originalRecord[$attributeId] = $attributeValue;
