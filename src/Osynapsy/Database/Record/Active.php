@@ -27,7 +27,7 @@ abstract class Active implements RecordInterface
     private $originalRecord = [];
     protected $recordCollection = [];
     protected $activeRecordIdx;
-    private $behavior;
+    protected $behavior = self::BEHAVIOR_INSERT;
     private $searchCondition = [];
     private $softDelete = [];
     protected $sequence;
@@ -47,8 +47,7 @@ abstract class Active implements RecordInterface
      */
     public function __construct(array $filters = [], array $orderby = [], ?DboInterface $dbo = null)
     {
-        $this->dbConnection = $dbo ?? dbo();
-        $this->behavior = self::BEHAVIOR_INSERT;
+        $this->dbConnection = $dbo ?? dbo();        
         $this->keys = $this->primaryKey();
         $this->table = $this->table();
         $this->sequence = $this->sequence();
@@ -90,17 +89,17 @@ abstract class Active implements RecordInterface
         }
         $this->reset();
         $this->searchCondition = $this->arrayIsList($filterParameters) ? $this->parameterByKeyFactory($filterParameters) : $filterParameters;
-        $this->recordCollection = $this->getCollectionFromDb($this->searchCondition);
+        $this->recordCollection = $this->getCollectionFromDb($this->searchCondition);       
         if (empty($this->recordCollection)) {
-            return;
-        }
+            return $this;
+        }        
         $this->activeRecordIdx = 0;
         $this->activeRecord = $this->recordCollection[$this->activeRecordIdx];
         if (!empty($this->extensions)) {
             $this->activeRecord = array_merge($this->loadExtensions(), $this->activeRecord);
         }
         $this->originalRecord = $this->activeRecord;
-        $this->behavior = self::BEHAVIOR_UPDATE;
+        $this->setBehavior(self::BEHAVIOR_UPDATE);
         return $this;
     }
 
@@ -284,9 +283,6 @@ abstract class Active implements RecordInterface
      */
     public function save(array $values = [])
     {
-        if (!$this->behavior) {
-            throw new \Exception('Record is not updatable');
-        }
         if (!empty($values)) {
             $this->setValues($values);
         }
@@ -340,10 +336,15 @@ abstract class Active implements RecordInterface
     {
         $this->beforeInsert();
         $sequenceId = $this->getSequenceNextValue();
-        $autoincrementId = $this->getDb()->insert(
-            $this->table,
-            array_intersect_key($this->activeRecord, array_flip($this->fields()))
-        );
+        /*var_dump(array_intersect_key(
+                $this->activeRecord, 
+                array_flip($this->fields()
+        )));
+        exit;*/
+        $autoincrementId = $this->getDb()->insert($this->table, array_intersect_key(
+                $this->activeRecord, 
+                array_flip($this->fields()
+        )));
         $id = !empty($autoincrementId) ? $autoincrementId : $sequenceId;
         $this->loadRecordAfterInsert($id);
         $this->afterInsert($id);
@@ -424,7 +425,7 @@ abstract class Active implements RecordInterface
      */
     public function reset()
     {
-        $this->behavior = self::BEHAVIOR_INSERT;
+        $this->setBehavior(self::BEHAVIOR_INSERT);
         $this->activeRecord = [];
         $this->originalRecord = [];
         $this->searchCondition = [];
@@ -545,6 +546,11 @@ abstract class Active implements RecordInterface
         return $this->__get($field);
     }
 
+    protected function setBehavior($behavior)
+    {
+        $this->behavior = $behavior;
+    }
+    
     protected function afterDelete(){}
 
     protected function afterFindByKey(){}
