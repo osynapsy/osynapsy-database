@@ -100,6 +100,7 @@ abstract class Active implements RecordInterface
         }
         $this->originalRecord = $this->activeRecord;
         $this->setBehavior(self::BEHAVIOR_UPDATE);
+        $this->afterFind();
         return $this;
     }
 
@@ -553,7 +554,7 @@ abstract class Active implements RecordInterface
     
     protected function afterDelete(){}
 
-    protected function afterFindByKey(){}
+    protected function afterFind(){}
 
     protected function afterInsert(){}
 
