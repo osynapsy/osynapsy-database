@@ -47,7 +47,7 @@ abstract class Active implements RecordInterface
      */
     public function __construct(array $filters = [], array $orderby = [], ?DboInterface $dbo = null)
     {
-        $this->dbConnection = $dbo ?? dbo();        
+        $this->dbConnection = $dbo ?? dbo();
         $this->keys = $this->primaryKey();
         $this->table = $this->table();
         $this->sequence = $this->sequence();
@@ -89,10 +89,10 @@ abstract class Active implements RecordInterface
         }
         $this->reset();
         $this->searchCondition = $this->arrayIsList($filterParameters) ? $this->parameterByKeyFactory($filterParameters) : $filterParameters;
-        $this->recordCollection = $this->getCollectionFromDb($this->searchCondition);       
+        $this->recordCollection = $this->getCollectionFromDb($this->searchCondition);
         if (empty($this->recordCollection)) {
             return $this;
-        }        
+        }
         $this->activeRecordIdx = 0;
         $this->activeRecord = $this->recordCollection[$this->activeRecordIdx];
         if (!empty($this->extensions)) {
@@ -338,12 +338,12 @@ abstract class Active implements RecordInterface
         $this->beforeInsert();
         $sequenceId = $this->getSequenceNextValue();
         /*var_dump(array_intersect_key(
-                $this->activeRecord, 
+                $this->activeRecord,
                 array_flip($this->fields()
         )));
         exit;*/
         $autoincrementId = $this->getDb()->insert($this->table, array_intersect_key(
-                $this->activeRecord, 
+                $this->activeRecord,
                 array_flip($this->fields()
         )));
         $id = !empty($autoincrementId) ? $autoincrementId : $sequenceId;
@@ -551,7 +551,7 @@ abstract class Active implements RecordInterface
     {
         $this->behavior = $behavior;
     }
-    
+
     protected function afterDelete(){}
 
     protected function afterFind(){}
