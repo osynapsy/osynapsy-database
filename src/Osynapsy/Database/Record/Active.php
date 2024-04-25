@@ -90,18 +90,46 @@ abstract class Active implements RecordInterface
         $this->reset();
         $this->searchCondition = $this->arrayIsList($filterParameters) ? $this->parameterByKeyFactory($filterParameters) : $filterParameters;
         $this->recordCollection = $this->getCollectionFromDb($this->searchCondition);
-        if (empty($this->recordCollection)) {
-            return $this;
+        if (!empty($this->recordCollection)) {
+            $this->moveToRecord(0);
+            $this->afterFind();
         }
-        $this->activeRecordIdx = 0;
+        return $this;
+    }
+
+    public function moveToRecord(int $idx)
+    {
+        if (!array_key_exists($idx, $this->recordCollection)) {
+            throw new \Exception(sprintf('I can\'t move to record %s. No record with index %s exists in record collection', $idx, $idx));
+        }
+        $this->activeRecordIdx = $idx;
         $this->activeRecord = $this->recordCollection[$this->activeRecordIdx];
         if (!empty($this->extensions)) {
             $this->activeRecord = array_merge($this->loadExtensions(), $this->activeRecord);
         }
         $this->originalRecord = $this->activeRecord;
         $this->setBehavior(self::BEHAVIOR_UPDATE);
-        $this->afterFind();
-        return $this;
+    }
+
+    public function nextRecord()
+    {
+        $nextIdx = ($this->activeRecordIdx ?? -1) + 1;
+        $maxIdx = count($this->recordCollection);
+        if ($nextIdx < $maxIdx) {
+            $this->moveToRecord($nextIdx);
+            return $this;
+        }
+        return null;
+    }
+
+    public function prevRecord()
+    {
+        $prevIdx = ($this->activeRecordIdx ?? 1) - 1;
+        if ($prevIdx >= 0) {
+            $this->moveToRecord($prevIdx);
+            return $this;
+        }
+        return null;
     }
 
     protected function parameterByKeyFactory($keyValues)
@@ -152,6 +180,10 @@ abstract class Active implements RecordInterface
         $values = is_array($value) ? $value : [$fieldName => $value];
         $parameters = $conditions = [];
         foreach ($values as $field => $value) {
+            if (is_array($value)) {
+                $conditions[] = sprintf("%s IN ('%s')", implode("','", array_clean($value)));
+                continue;
+            }
             $parameterId = "p{$idx}";
             $conditions[] = sprintf("%s = :%s", !is_int($field) ? $field : $fieldName, $parameterId);
             $parameters[$parameterId] = $value;
@@ -214,6 +246,11 @@ abstract class Active implements RecordInterface
     public function getExtension($idx = 0)
     {
         return $this->extendRecord[$idx];
+    }
+
+    public function getSearchCondition() : array
+    {
+        return $this->searchCondition;
     }
 
     protected function orderby() : array
@@ -337,15 +374,13 @@ abstract class Active implements RecordInterface
     {
         $this->beforeInsert();
         $sequenceId = $this->getSequenceNextValue();
-        /*var_dump(array_intersect_key(
+        $autoincrementId = $this->getDb()->insert(
+            $this->table,
+            array_intersect_key(
                 $this->activeRecord,
-                array_flip($this->fields()
-        )));
-        exit;*/
-        $autoincrementId = $this->getDb()->insert($this->table, array_intersect_key(
-                $this->activeRecord,
-                array_flip($this->fields()
-        )));
+                array_flip($this->fields())
+            )
+        );
         $id = !empty($autoincrementId) ? $autoincrementId : $sequenceId;
         $this->loadRecordAfterInsert($id);
         $this->afterInsert($id);
@@ -366,7 +401,7 @@ abstract class Active implements RecordInterface
         }
         $attributes = [];
         foreach($this->keys as $key) {
-            if (!$this->activeRecord[$key]) {
+            if (!array_key_exists($key, $this->activeRecord) || !$this->activeRecord[$key]) {
                 return;
             }
             $attributes[$key] = $this->activeRecord[$key];
@@ -384,7 +419,10 @@ abstract class Active implements RecordInterface
         $this->beforeUpdate();
         $this->getDb()->update(
             $this->table,
-            array_intersect_key($this->activeRecord, array_flip($this->fields())),
+            array_intersect_key(
+                $this->activeRecord,
+                array_flip($this->fields())
+            ),
             $this->activeRecordCondition()
         );
         $this->afterUpdate();
