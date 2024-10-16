@@ -61,11 +61,11 @@ abstract class Eav
         }
         $this->reset();
         $this->searchCondition = $reSearchParameters;
-        $where = $this->buildWhereConditions($reSearchParameters); 
+        $where = $this->buildWhereConditions($reSearchParameters);
         $this->loadFieldValues($this->execQuery($where));
         if (!empty($this->originalRecord)) {
             $this->state = 'update';
-        }        
+        }
         return $this;
     }
 
@@ -82,13 +82,13 @@ abstract class Eav
         }
         return $where;
     }
-    
+
     protected function execQuery($where)
-    {        
+    {
         $sql = sprintf("SELECT * FROM %s WHERE %s ORDER BY 1", $this->table, implode(' AND ', $where['conditions']));
         return $this->dbConnection->findAssoc($sql, $where['parameters']);
     }
-    
+
     protected function loadFieldValues($recordSet)
     {
         foreach ($recordSet as $fields) {
@@ -105,7 +105,7 @@ abstract class Eav
      * @param string $field
      * @return boolean
      */
-    public function fieldExists($field)
+    public function hasField($field)
     {
         return empty($this->fields) ? true : in_array($field, $this->fields);
     }
@@ -165,7 +165,7 @@ abstract class Eav
         if (empty($field)) {
             throw new \Exception('Field parameter is empty');
         }
-        if (!$this->fieldExists($field)) {
+        if (!$this->hasField($field)) {
             throw new \Exception("Field {$field} do not exist in ".get_class($this));
         }
         if (in_array($field, $this->keys)) {
