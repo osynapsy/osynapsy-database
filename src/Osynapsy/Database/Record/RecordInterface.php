@@ -21,8 +21,8 @@ interface RecordInterface
     const BEHAVIOR_INSERT = 'insert';
     const BEHAVIOR_UPDATE = 'update';
 
-    public function fieldExists($field);
-    
+    public function hasField($field) : bool;
+
     public function where(array $searchParameters);
 
     public function get($key = null);
