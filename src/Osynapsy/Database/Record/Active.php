@@ -66,7 +66,7 @@ abstract class Active implements RecordInterface
      * @param string $field
      * @return boolean
      */
-    public function fieldExists($field)
+    public function hasField($field) : bool
     {
         return in_array(trim($field), $this->fields);
     }
@@ -273,7 +273,7 @@ abstract class Active implements RecordInterface
             throw new \Exception("Field parameter is empty field={$field} value={$value}");
         }
         //If searched field is in actual record set activeRecord and return;
-        if ($this->fieldExists($field)) {
+        if ($this->hasField($field)) {
             $this->activeRecord[$field] = $value ?? $defaultValue;
             return $this;
         }
@@ -290,11 +290,10 @@ abstract class Active implements RecordInterface
     {
         foreach($this->extensions as $extension) {
             $record = $extension[0];
-            if (!$record->fieldExists($field)) {
-                continue;
+            if ($record->hasField($field)) {
+                $record->setValue($field, $value, $defaultValue);
+                return true;
             }
-            $record->setValue($field, $value, $defaultValue);
-            return true;
         }
         return false;
     }
@@ -349,11 +348,11 @@ abstract class Active implements RecordInterface
                     $RecordExt->setValue($field, $this->get($this->keys[$foreignIdx]));
                     continue;
                 }
-                $RecordExt->setValue($foreignIdx, $this->fieldExists($field) ? $this->get($field) : $field);
+                $RecordExt->setValue($foreignIdx, $this->hasField($field) ? $this->get($field) : $field);
             }
             foreach($extendedValues as $field => $value) {
                 //Intercept exception on setValue extended record;
-                if (!$RecordExt->fieldExists($field)) {
+                if (!$RecordExt->hasField($field)) {
                     continue;
                 }
                 $RecordExt->setValue($field, $value);
