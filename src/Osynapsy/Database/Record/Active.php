@@ -195,16 +195,16 @@ abstract class Active implements RecordInterface
     private function loadExtensions()
     {
         $values = [];
-        foreach ($this->extensions as $extension) {
+        foreach ($this->extensions as $extension) {            
             $searchArray = [];
             foreach ($extension[1] as $foreignIdx => $field) {
                 if (is_int($foreignIdx)) {
                     $searchArray[$field] = $this->get($this->keys[$foreignIdx]);
                     continue;
                 }
-                $searchArray[$foreignIdx] = $this->fieldExists($field) ? $this->get($field) : $field;
-            }
-            $extens = $extension[0]->where($searchArray)->get();
+                $searchArray[$foreignIdx] = $this->hasField($field) ? $this->get($field) : $field;
+            }            
+            $extens = $extension[0]->where($searchArray)->get();            
             $values = array_merge($values, is_array($extens) ? $extens : []);
         }
         return $values;
