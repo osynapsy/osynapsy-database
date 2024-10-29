@@ -331,6 +331,19 @@ abstract class Active implements RecordInterface
         $this->afterSave();
         return $id;
     }
+    
+    /**
+     * Save current active record on database and return $this object
+     *
+     * @return $this
+     * @throws \Exception
+     */    
+    public function store(array $values = [])
+    {
+        $searchCondition = array_filter($this->searchCondition, fn($k) => in_array($k, $this->fields), ARRAY_FILTER_USE_KEY);        
+        $this->save(array_merge($searchCondition ?? [], $values));
+        return $this;
+    }
 
     /**
      * Save current active record extension on database
