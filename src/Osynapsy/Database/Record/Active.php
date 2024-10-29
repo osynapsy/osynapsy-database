@@ -340,7 +340,11 @@ abstract class Active implements RecordInterface
      */    
     public function store(array $values = [])
     {
-        $searchCondition = array_filter($this->searchCondition, fn($k) => in_array($k, $this->fields), ARRAY_FILTER_USE_KEY);        
+        $searchCondition = array_filter(
+            $this->searchCondition, 
+            fn($k) => in_array($k, $this->fields),
+            ARRAY_FILTER_USE_KEY
+        );        
         $this->save(array_merge($searchCondition ?? [], $values));
         return $this;
     }
