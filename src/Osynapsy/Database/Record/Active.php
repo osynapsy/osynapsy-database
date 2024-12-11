@@ -195,7 +195,7 @@ abstract class Active implements RecordInterface
     private function loadExtensions()
     {
         $values = [];
-        foreach ($this->extensions as $extension) {            
+        foreach ($this->extensions as $extension) {
             $searchArray = [];
             foreach ($extension[1] as $foreignIdx => $field) {
                 if (is_int($foreignIdx)) {
@@ -203,8 +203,8 @@ abstract class Active implements RecordInterface
                     continue;
                 }
                 $searchArray[$foreignIdx] = $this->hasField($field) ? $this->get($field) : $field;
-            }            
-            $extens = $extension[0]->where($searchArray)->get();            
+            }
+            $extens = $extension[0]->where($searchArray)->get();
             $values = array_merge($values, is_array($extens) ? $extens : []);
         }
         return $values;
@@ -331,20 +331,37 @@ abstract class Active implements RecordInterface
         $this->afterSave();
         return $id;
     }
-    
+
+    /**
+     * Save collection of records on db
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function saveCollection(array $collection)
+    {
+        $result = [];
+        if (!empty($collection)) {
+            foreach ($collection as $values) {
+                $result[] = $this->reset()->save($values);
+            }
+        }
+        return array_filter($result);
+    }
+
     /**
      * Save current active record on database and return $this object
      *
      * @return $this
      * @throws \Exception
-     */    
+     */
     public function store(array $values = [])
     {
         $searchCondition = array_filter(
-            $this->searchCondition, 
+            $this->searchCondition,
             fn($k) => in_array($k, $this->fields),
             ARRAY_FILTER_USE_KEY
-        );        
+        );
         $this->save(array_merge($searchCondition ?? [], $values));
         return $this;
     }
