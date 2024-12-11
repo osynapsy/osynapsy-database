@@ -211,7 +211,7 @@ abstract class Active implements RecordInterface
     }
 
     /**
-     * Get single value from active record or get all active record
+     * Get single value from active record or get all fields of active record
      *
      * @param string $field name to return
      * @return mixed
@@ -223,6 +223,23 @@ abstract class Active implements RecordInterface
         }
         if (is_array($this->activeRecord) && array_key_exists($field, $this->activeRecord)) {
             return $this->activeRecord[$field];
+        }
+        return null;
+    }
+
+    /**
+     * Get single value from original record or get all fields of the origina record
+     *
+     * @param string $field name to return
+     * @return mixed
+     */
+    public function getOld($field = null)
+    {
+        if (is_null($field)) {
+            return $this->originalRecord;
+        }
+        if (is_array($this->originalRecord) && array_key_exists($field, $this->originalRecord)) {
+            return $this->originalRecord[$field];
         }
         return null;
     }
