@@ -269,6 +269,15 @@ class Select
 
     public function exec()
     {
-        return $this->db->findAssoc($this->__toString(), $this->getParameters());
+        return dbo()->findAssoc($this->__toString(), $this->getParameters());
+    }
+    
+    public function debug()
+    {
+        $query = $this->__toString();
+        foreach($this->getParameters() as $pid => $pval) {
+            $query = str_replace(':'.$pid, is_numeric($pval) ? $pval : "'$pval", $query);
+        }
+        return $query;
     }
 }
