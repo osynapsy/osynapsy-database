@@ -124,6 +124,7 @@ class PaginatorSimple
 
     private function buildMySqlQuery($sql)
     {
+        $startFrom = 0;
         if (!empty($this->meta[self::META_PAGE_SIZE])) {
             $startFrom = max(0, ($this->meta['pageCurrent'] - 1) * $this->meta[self::META_PAGE_SIZE]);
             $sql .= sprintf(PHP_EOL."LIMIT %s, %s", $startFrom,$this->meta[self::META_PAGE_SIZE]);
