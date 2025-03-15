@@ -125,7 +125,7 @@ class DboPdo extends \PDO implements DboInterface
                 $s->execute($rec);
             } catch (\Exception $e){
                 $this->rollBack();
-                return sprintf('%s %s %s', $cmd, $e->getMessage(), print_r($rec, true));
+                $this->raiseException($e->getMessage(), $cmd, $rec);
             }
         }
         $this->commit();
@@ -164,12 +164,16 @@ class DboPdo extends \PDO implements DboInterface
 
     protected function execQuery($sql, $parameters = null, $pdoFetchMethod = null, $fetchColumnIdx = null)
     {
-        $this->cursor = $this->prepare($sql);
-        $this->cursor->execute($parameters);
-        if (!is_null($fetchColumnIdx)) {
-            return $this->cursor->fetchAll(\PDO::FETCH_COLUMN, $fetchColumnIdx);
+        try {
+            $this->cursor = $this->prepare($sql);
+            $this->cursor->execute($parameters);
+            if (!is_null($fetchColumnIdx)) {
+                return $this->cursor->fetchAll(\PDO::FETCH_COLUMN, $fetchColumnIdx);
+            }
+            return $this->cursor->fetchAll($pdoFetchMethod);
+        } catch(\Exception $e) {
+            $this->raiseException($e, $sql, $parameters);
         }
-        return $this->cursor->fetchAll($pdoFetchMethod);
     }
 
     protected function execUnique($sql, $parameters = null, $fetchMethod = self::FETCH_NUM)
@@ -353,5 +357,21 @@ class DboPdo extends \PDO implements DboInterface
     public function __set($key, $value)
     {
         return $this->param[$key] = $value;
+    }
+
+    public function raiseException(\Exception $e, $rawsql, $params)
+    {
+        $tok = strtok($rawsql, '?');
+        $sql = '';
+        $i = 0;
+        while($tok !== false) {
+            $sql .= $tok . " '" . ($params[$i] ?? '') . "'";
+            $tok = strtok('?');
+            $i++;
+        }
+        foreach($params as $k => $p) {
+            $sql = str_replace(":{$k}", "'{$p}'", $sql);
+        }
+        throw new \Exception(sprintf("%s\n<pre>%s</pre>\n", $e->getMessage(), $sql), (int) $e->getCode());
     }
 }
