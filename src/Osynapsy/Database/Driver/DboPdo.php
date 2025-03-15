@@ -123,7 +123,7 @@ class DboPdo extends \PDO implements DboInterface
         foreach ($rows as $rec) {
             try {
                 $s->execute($rec);
-            } catch (Exception $e){
+            } catch (\Exception $e){
                 $this->rollBack();
                 return sprintf('%s %s %s', $cmd, $e->getMessage(), print_r($rec, true));
             }
