@@ -117,23 +117,28 @@ class Select
         return $this;
     }
 
-    public function from($table, $fields = null)
+    public function from($table, $alias = null)
     {
-        $this->select($fields);
-        $this->elements['FROM'] = $table;
+        $this->elements['FROM'] = $this->buildDatasourceClause('', $table, $alias);
         return $this;
     }
 
-    public function join($table)
+    public function join($table, $alias = null)
     {
-        $this->elements['JOIN'][] = 'INNER JOIN '.$table;
+        $this->elements['JOIN'][] = $this->buildDatasourceClause('INNER JOIN', $table, $alias);
         return $this;
     }
 
-    public function joinLeft($table)
+    public function joinLeft($table, $alias = '')
     {
-        $this->elements['JOIN'][] = 'LEFT JOIN '.$table;
+        $this->elements['JOIN'][] = $this->buildDatasourceClause('LEFT JOIN', $table, $alias);
         return $this;
+    }
+    
+    protected function buildDatasourceClause($keyword, $table, $alias)
+    {
+        $datasource = $table instanceof Select ? sprintf("(\n%s\n)", strval($table)) : $table;
+        return trim(sprintf('%s %s %s', $keyword, $datasource, $alias));
     }
 
     public function on(array $conditions, array $parameters = [])
