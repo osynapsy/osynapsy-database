@@ -138,6 +138,9 @@ class Select
     protected function buildDatasourceClause($keyword, $table, $alias)
     {
         $datasource = $table instanceof Select ? sprintf("(\n%s\n)", strval($table)) : $table;
+        if ($table instanceof Select) {
+            $this->parameters += $table->getParameters();
+        }
         return trim(sprintf('%s %s %s', $keyword, $datasource, $alias));
     }
 
