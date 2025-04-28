@@ -134,14 +134,14 @@ class Select
         $this->elements['JOIN'][] = $this->buildDatasourceClause('LEFT JOIN', $table, $alias);
         return $this;
     }
-    
+
     protected function buildDatasourceClause($keyword, $table, $alias)
     {
         $datasource = $table;
         if ($datasource instanceof Select) {
             $this->parameters += $table->getParameters();
             $datasource = sprintf("(\n%s\n)", strval($datasource));
-        }       
+        }
         return trim(sprintf('%s %s %s', $keyword, $datasource, $alias));
     }
 
@@ -191,6 +191,7 @@ class Select
     public function limit($from, $width)
     {
         $this->elements['LIMIT'] = "$from,$width";
+        return $this;
     }
 
     public function __toString()
@@ -280,7 +281,7 @@ class Select
     {
         return dbo()->findAssoc($this->__toString(), $this->getParameters());
     }
-    
+
     public function debug()
     {
         $query = $this->__toString();
